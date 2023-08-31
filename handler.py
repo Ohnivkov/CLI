@@ -1,42 +1,37 @@
 phone_numbers_dict={}
 def input_error(func):
-    def inner(*args,**kwargs):
+     def inner(*args, **kwargs):
         try:
-            func(*args,**kwargs)
-        except IndexError:
-            if inner in (add_number,change_number):
-                print("Give me name and phone please")
-            elif inner == get_phone:
-                print("Enter user name")
+            if inner == get_phone:
+                print(func(*args, **kwargs))
+            else:
+                func(*args,**kwargs)
         except KeyError:
-            if inner == change_number:
-                print('there is no such name in the phone book')
-            elif inner == add_number:
-                print('this name already exists in the phone book')
-    return inner
+            return KeyError
+     return inner
+@input_error
+def add_number(name,phone):
+    if is_keyindict(name):
+        raise KeyError
+    else:
+        phone_numbers_dict[name] = phone
+@input_error
+def change_number(name,phone):
 
-@input_error
-def add_number(command):
-    command = command.split(' ')
-    if is_keyindict(command[1]):
-        raise KeyError
-    else:
-        phone_numbers_dict[command[1]] = command[2]
-@input_error
-def change_number(command):
-    command = command.split(' ')
-    if is_keyindict(command[1]):
-        phone_numbers_dict[command[1]] = command[2]
+    if is_keyindict(name):
+        phone_numbers_dict[name] = phone
     else:
         raise KeyError
 @input_error
-def get_phone(command):
-    command = command.split(' ')
-    print(phone_numbers_dict[command[0]])
-@input_error
+def get_phone(name):
+    if is_keyindict(name):
+        result=phone_numbers_dict[name]
+        return result
+    else:
+        raise KeyError
 def show_all():
     for i in phone_numbers_dict:
-        print(f'{i}: {phone_numbers_dict[i]}')
+        yield f'{i}: {phone_numbers_dict[i]}'
 def is_keyindict(key):
     if key in phone_numbers_dict:
         return True
