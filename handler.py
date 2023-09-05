@@ -11,40 +11,31 @@ class Name(Field):
 
 
 class Phone(Field):
-
-    def add_phone(self, phone_number):
-        if not self.value:
-            self.value = [phone_number]
-        else:
-            self.value.append(phone_number)
-
-    def remove_phone(self, phone_number):
-        if self.value and phone_number in self.value:
-            self.value.remove(phone_number)
+    pass
 
 
 class Record:
 
     def __init__(self, name, phone=None):
         self.name = Name(value=name)
-        self.phones = Phone(value=[])
+        self.phones = []
         if phone:
             self.add_number(phone)
 
     def add_number(self, phone):
-        self.phones.add_phone(phone)
+        phone =Phone(value=phone)
+        self.phones.append(phone.value)
 
     def remove_number(self, phone):
-        self.phones.remove_phone(phone)
+        self.phones=adresbook[self.name.value]
+        for number in self.phones:
+            if phone==number:
+                self.phones.remove(number)
 
 
 class AdressBook(UserDict):
     def add_record(self, record: Record):
-        self.data[record.name.value] = record.phones.value
-
-    def remove_record(self, record: Record):
-        del self.data[record.name.value]
-
+        self.data[record.name.value] = record.phones
     def finder(self, request):
         found_requests = ''
         for name, phone in self.data.items():
@@ -115,12 +106,17 @@ def class_processor(command, task):
         else:
             raise ValueError('The contact is in adressbook')
     elif task == 'remove':
-        name = parse_command(command)[0]
+        name, phones = parse_command(command)[0], parse_command(command)[1]
         if name in adresbook:
-            record = Record(name)
-            adresbook.remove_record(record)
+            record=Record(name)
+            for phone in phones:
+                if phone in adresbook[name]:
+                    record.remove_number(phone)
+                    adresbook.add_record(record)
+                else:
+                    raise ValueError('Wrong phone')
         else:
-            raise ValueError('The contact is not in adressbook')
+            raise ValueError('Wrong name')
     else:
         request = command
         if adresbook.finder(request):
@@ -169,3 +165,4 @@ def parse_command(command):
         raise ValueError('Wrong name.')
 
     return name, phone
+
