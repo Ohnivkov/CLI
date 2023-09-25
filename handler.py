@@ -1,10 +1,12 @@
 from collections import UserDict
 from datetime import datetime
-
+import pickle
+import os
 class Field:
     def __init__(self, value):
-        self._value=None
-        self.value=value
+        self._value = None
+        self.value = value
+
     @property
     def value1(self) -> str:
         return self._value
@@ -16,27 +18,30 @@ class Name(Field):
 
 class Phone(Field):
     @Field.value1.setter
-    def value(self,value) -> None:
-        if 8<=len(value)<=10:
-            self._value=value
+    def value(self, value) -> None:
+        if 8 <= len(value) <= 10:
+            self._value = value
         else:
             raise ValueError('Wrong phone')
+
+
 class Birthday(Field):
     @Field.value1.setter
-    def value(self,value) -> None:
+    def value(self, value) -> None:
         try:
-            now_time=datetime.now().date()
+            now_time = datetime.now().date()
             new_format_date = datetime.strptime(value, '%Y-%m-%d').date()
             birthday_date = datetime(now_time.year, new_format_date.month, new_format_date.day).date()
-            if now_time>birthday_date:
-                birthday_date = datetime(now_time.year+1, new_format_date.month, new_format_date.day).date()
-            self._value=birthday_date
+            if now_time > birthday_date:
+                birthday_date = datetime(now_time.year + 1, new_format_date.month, new_format_date.day).date()
+            self._value = birthday_date
         except:
             raise ValueError('Wrong birthday')
 
+
 class Record:
 
-    def __init__(self, name, phone=None,birthday=None):
+    def __init__(self, name, phone=None, birthday=None):
         self.name = Name(value=name)
         self.phones = []
         self.birthday_date = None
@@ -44,54 +49,65 @@ class Record:
             self.add_number(phone)
         if birthday:
             self.birthday_date = Birthday(value=birthday)
+
     def add_number(self, phone):
-        phone =Phone(value=phone)
+        phone = Phone(value=phone)
         self.phones.append(phone.value)
 
     def remove_number(self, phone):
-        self.phones=adresbook[self.name.value]
+        self.phones = adresbook[self.name.value]
         for number in self.phones:
-            if phone==number:
+            if phone == number:
                 self.phones.remove(number)
 
     def days_to_birthday(self):
-        now=datetime.now().date()
+        now = datetime.now().date()
         if adresbook[self.name.value].birthday_date.value:
-            delta=adresbook[self.name.value].birthday_date.value-now
+            delta = adresbook[self.name.value].birthday_date.value - now
             return delta.days
         else:
             raise ValueError('No information for birthday')
+
+
 class AdressBook(UserDict):
     def add_record(self, record: Record):
         self.data[record.name.value] = record
+
     def finder(self, request):
         found_requests = ''
-        for name, phone in self.data.items():
-            if request in name or request in str(phone):
-                found_requests += f'{name}: {phone}\n'
+        for name, value in self.data.items():
+            if request in name or request in str(value.phones):
+                found_requests += f'{name}: {value.phones}\n'
         return found_requests
+
+
+
 adresbook = AdressBook()
+if os.path.exists('data.bin'):
+    with open('data.bin', 'rb') as fh:
+        adresbook.data = pickle.load(fh)
 class Iterable:
-    page_counter=0
-    def __init__(self,n=5):
-        self.counter=1
-        self.contacts_for_page=n
-        self.info_list=[(key,items) for key,items in adresbook.items()]
+    page_counter = 0
+
+    def __init__(self, n=5):
+        self.counter = 1
+        self.contacts_for_page = n
+        self.info_list = [(key, items) for key, items in adresbook.items()]
+
     def __next__(self):
-        if self.counter <= self.contacts_for_page and len(adresbook)!=Iterable.page_counter:
+        if self.counter <= self.contacts_for_page and len(adresbook) != Iterable.page_counter:
             self.counter += 1
             Iterable.page_counter += 1
-            return self.info_list[Iterable.page_counter-1][0],self.info_list[Iterable.page_counter-1][1]
+            return self.info_list[Iterable.page_counter - 1][0], self.info_list[Iterable.page_counter - 1][1]
         raise StopIteration
 
 
 class CustomIterator:
-    def __init__(self,n):
-        self.n=n
+    def __init__(self, n):
+        self.n = n
+
     def __iter__(self):
         return Iterable(self.n)
-
-
 
 
 def input_error(func):
@@ -124,20 +140,25 @@ def change_number(data):
     else:
         raise ValueError('this contact does not exist')
 
+
 page_counter = 0
+
+
 @input_error
 def show_all(n=5):
     global page_counter
     page_counter = n
     contacts = ''
-    limit=CustomIterator(int(n))
+    limit = CustomIterator(int(n))
     for i in limit:
-        contacts+=f'{i[0]} : {i[1].phones} {i[1].birthday_date.value} \n' if i[1].birthday_date else f'{i[0]} : {i[1].phones} \n'
-    if Iterable.page_counter==len(adresbook):
-        Iterable.page_counter=0
-        return contacts+"that's all"
+        contacts += f'{i[0]} : {i[1].phones} {i[1].birthday_date.value} \n' if i[
+            1].birthday_date else f'{i[0]} : {i[1].phones} \n'
+    if Iterable.page_counter == len(adresbook):
+        Iterable.page_counter = 0
+        return contacts + "that's all"
     else:
-        return contacts+'type "next" if you want see more'
+        return contacts + 'type "next" if you want see more'
+
 
 @input_error
 def exit_func():
@@ -147,12 +168,12 @@ def exit_func():
 @input_error
 def class_processor(command, task):
     if task == 'add':
-        if len(parse_command(command))==2:
+        if len(parse_command(command)) == 2:
             name, phones = parse_command(command)[0], parse_command(command)[1]
             record = Record(name)
         else:
-            name, phones, birthday = parse_command(command)[0], parse_command(command)[1],parse_command(command)[2]
-            record = Record(name,birthday=birthday)
+            name, phones, birthday = parse_command(command)[0], parse_command(command)[1], parse_command(command)[2]
+            record = Record(name, birthday=birthday)
         if name not in adresbook:
             for phone in phones:
                 if not phone.isnumeric():
@@ -165,7 +186,7 @@ def class_processor(command, task):
     elif task == 'remove':
         name, phones = parse_command(command)[0], parse_command(command)[1]
         if name in adresbook:
-            record=Record(name)
+            record = Record(name)
             for phone in phones:
                 if phone in adresbook[name]:
                     record.remove_number(phone)
@@ -174,9 +195,9 @@ def class_processor(command, task):
                     raise ValueError('Wrong phone')
         else:
             raise ValueError('Wrong name')
-    elif task=='days_to_birthday':
-        name=parse_command(command)
-        record=Record(name)
+    elif task == 'days_to_birthday':
+        name = parse_command(command)
+        record = Record(name)
         return record.days_to_birthday()
     else:
         request = command
@@ -196,8 +217,8 @@ Command_dict = {
     'add': class_processor,
     'remove': class_processor,
     'search': class_processor,
-    'days_to_birthday':class_processor,
-    'next':show_all
+    'days_to_birthday': class_processor,
+    'next': show_all
 }
 
 
@@ -209,14 +230,14 @@ def get_command(input):
             command = key
             user_input = input[len(command):].strip()
             break
-    if command in ('add', 'search', 'remove','days_to_birthday'):
+    if command in ('add', 'search', 'remove', 'days_to_birthday'):
         return Command_dict[command](user_input, command)
     elif command:
         if user_input:
             return Command_dict[command](user_input)
         else:
-            if command=='next':
-                if Iterable.page_counter!=0 and len(adresbook)>int(page_counter):
+            if command == 'next':
+                if Iterable.page_counter != 0 and len(adresbook) > int(page_counter):
                     return Command_dict[command](page_counter)
                 else:
                     return 'Wrong command'
@@ -230,14 +251,13 @@ def get_command(input):
 
 def parse_command(command):
     new_command = command.split(' ')
-    name=new_command[0]
-    if len(new_command)==1:
+    name = new_command[0]
+    if len(new_command) == 1:
         return name
     elif not new_command[-1].isnumeric():
-        phones=new_command[1:-1]
-        birthday=new_command[-1]
-        return name,phones,birthday
+        phones = new_command[1:-1]
+        birthday = new_command[-1]
+        return name, phones, birthday
     else:
         phones = new_command[1:]
-        return name,phones
-
+        return name, phones
